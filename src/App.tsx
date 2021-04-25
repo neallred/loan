@@ -125,7 +125,7 @@ function Outcome({
     monthlyPayment,
     monthsLeft,
   })
-  if (paymentHistory.monthCount == 0 || principle <= 0) {
+  if (paymentHistory.monthCount === 0 || principle <= 0) {
     return <div
       style={{
         paddingBottom: '30px',
@@ -137,8 +137,8 @@ function Outcome({
       paddingBottom: '30px',
     }}
   >
-    After {paymentHistory.monthCount} months, you paid {paymentHistory.youPaid} ({paymentHistory.youPaidInterest} in interest).
-    {paymentHistory.left > 0 && <div>You still have ${paymentHistory.left} to pay</div>}
+    After {paymentHistory.monthCount} months, you paid {paymentHistory.youPaid.toFixed(2)} ({paymentHistory.youPaidInterest.toFixed(2)} in interest).
+    {paymentHistory.left > 0 && <div>You still have ${paymentHistory.left.toFixed(2)} to pay</div>}
   </div>
 }
 

@@ -1,0 +1,11 @@
+[package]
+name = "server"
+version = "0.1.0"
+authors = ["neallred <neallred@protonmail.com>"]
+edition = "2018"
+
+[dependencies]
+rouille = "3.0.0"
+
+[build-dependencies]
+walkdir = "2.3.1"
