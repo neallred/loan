@@ -3,7 +3,7 @@ use std::{
 };
 use walkdir::{WalkDir};
 
-const STATIC_DIR: &str = "../build";
+const STATIC_DIR: &str = "client/build";
 
 fn get_file_name(f: &str) -> String {
     if f.contains(&format!("{}/{}", STATIC_DIR.to_owned(), "index.html")) {
@@ -70,7 +70,7 @@ fn main() {
                 Response::from_data("application/wasm", include_bytes!("../{name}").to_vec())
             }},"#,
                 name = f.path().display(),
-                serve_name = f.file_name().to_str().unwrap().replace("assets/", "").replace("../build/", ""),
+                serve_name = f.file_name().to_str().unwrap().replace("assets/", "").replace("client/build/", ""),
             )?;
         } else {
             writeln!(
@@ -79,7 +79,7 @@ fn main() {
                 Response::{content_type}(include_str!("../{name}"))
             }},"#,
                 name = f.path().display(),
-                serve_name = get_file_name(f.path().to_str().unwrap()).replace("assets/", "").replace("../build/", ""),
+                serve_name = get_file_name(f.path().to_str().unwrap()).replace("assets/", "").replace("client/build/", ""),
                 content_type = if file_name.contains(".html") { "html" } else { "text" },
             )?;
         }
