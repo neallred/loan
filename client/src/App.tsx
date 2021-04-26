@@ -15,7 +15,11 @@ function App() {
   const annualInterestRate = inputInterestRate / PERCENTAGE_GRANULARITY;
 
   return (
-    <div>
+    <div
+        style={{
+          margin: '10px',
+        }}
+    >
       <style>
         {sliderStyles}
       </style>
@@ -48,6 +52,15 @@ function App() {
           step={1000}
         />
         <Slider
+          label="Annual interest rate"
+          amt={inputInterestRate}
+          displayAmt={annualInterestRate.toString() + '%'}
+          setter={setAnnualInterestRate}
+          min={1 * PERCENTAGE_GRANULARITY}
+          max={10 * PERCENTAGE_GRANULARITY}
+          step={1}
+        />
+        <Slider
           label="Yearly insurance"
           amt={yearlyInsurance}
           displayAmt={`$${yearlyInsurance}`}
@@ -62,15 +75,6 @@ function App() {
           setter={setYearlyTax}
           max={20000}
           step={50}
-        />
-        <Slider
-          label="Annual interest rate"
-          amt={inputInterestRate}
-          displayAmt={annualInterestRate.toString() + '%'}
-          setter={setAnnualInterestRate}
-          min={1 * PERCENTAGE_GRANULARITY}
-          max={10 * PERCENTAGE_GRANULARITY}
-          step={1}
         />
         <Slider
           label="Years left"

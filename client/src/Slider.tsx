@@ -21,11 +21,11 @@ export function Slider({
   return (
     <div
       style={{
-        paddingBottom: "30px"
+        paddingBottom: "40px"
       }}
     >
       <div>
-        <label htmlFor={label}>{label}: {displayAmt || amt}</label>
+        <label>{label}: {displayAmt || amt}</label>
       </div>
       <input
         {...inputProps}
@@ -38,7 +38,6 @@ export function Slider({
         value={amt}
         style={{
           width: "100%",
-          maxWidth: 'calc(100vw - 30px)',
         }}
         onChange={e => setter(parseInt(e.target.value))}
       />

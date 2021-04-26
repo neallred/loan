@@ -21,6 +21,7 @@ interface PaymentMonth {
 interface PaymentHistory {
   left: number,
   youPaid: number,
+  youPaidPrinciple: number,
   youPaidInterest: number,
   monthCount: number,
   months: PaymentMonth[],
@@ -30,6 +31,7 @@ function scanPayments(inputs: Inputs): PaymentHistory {
   let remaining = inputs.principle;
   let months = [];
   let youPaid = 0;
+  let youPaidPrinciple = 0;
   let youPaidInterest = 0;
   let paymentMonth = 1;
   for (let i = inputs.yearsLeft * 12; i > 0; i--) {
@@ -48,6 +50,7 @@ function scanPayments(inputs: Inputs): PaymentHistory {
     remaining = newRemaining;
     youPaid += payment;
     youPaidInterest += interestAccrued;
+    youPaidPrinciple += principlePaid;
     months.push({
       paid: payment,
       interestPaid: interestAccrued,
@@ -62,6 +65,7 @@ function scanPayments(inputs: Inputs): PaymentHistory {
     left: remaining,
     youPaid,
     youPaidInterest,
+    youPaidPrinciple,
     monthCount: months.length,
     months: months,
   }
@@ -92,7 +96,8 @@ function monthsToTime(months: number): string {
 export function Outcome(inputs: Inputs) {
   const paymentHistory = scanPayments(inputs);
   const time = monthsToTime(paymentHistory.monthCount);
-  useEffect(() => createGraph(paymentHistory, inputs), [paymentHistory, inputs])
+  useEffect(() => drawGraph(paymentHistory, inputs), [paymentHistory, inputs])
+  useEffect(() => drawPie(paymentHistory, inputs), [paymentHistory, inputs])
   return <div
     style={{
       paddingBottom: '30px',
@@ -101,14 +106,35 @@ export function Outcome(inputs: Inputs) {
     <div id="graph-mount"/>
     <div style={{
       display: 'flex',
+      justifyContent: 'space-around',
+      alignItems: 'center',
+      }}>
+    <div style={{
+      display: 'flex',
       justifyContent: 'center',
       flexDirection: 'column',
       alignItems: 'center',
       }}>
       <div>Legend:</div>
-      <div style={{ color: 'black' }}>Monthly Payment</div>
-      <div style={{ color: 'green'}}>Monthly Principle</div>
-      <div style={{ color: 'red' }}>Monthly Interest</div>
+      <div style={{ color: 'black' }}>Payment</div>
+      <div style={{ color: 'green'}}>Principle</div>
+      <div style={{ color: 'red' }}>Interest</div>
+    </div>
+      <div id="pie-mount">
+        <div style={{
+          borderRadius: '100%',
+          width: '80px',
+          height: '80px',
+          borderWidth: '1px',
+          borderColor: 'black',
+          borderStyle: 'solid',
+          textAlign: 'center',
+        }}>
+          <div>pie</div>
+          <div>principle</div>
+          <div>interest</div>
+        </div>
+      </div>
     </div>
     <div>After {time}, </div>
     you paid {numTo$(paymentHistory.youPaid)} ({numTo$(paymentHistory.youPaidInterest)} in interest)
@@ -116,9 +142,10 @@ export function Outcome(inputs: Inputs) {
   </div>
 }
 
-const createGraph = (paymentHistory: PaymentHistory, inputs: Inputs) => {
-  const margin = { top: 20, right: 20, bottom: 50, left: 70 };
-  const width = document.body.offsetWidth - margin.left - margin.right - 20;
+const BODY_MARGIN = 20;
+const drawGraph = (paymentHistory: PaymentHistory, inputs: Inputs) => {
+  const margin = { top: 10, right: 10, bottom: 20, left: 40 };
+  const width = document.body.offsetWidth - margin.left - margin.right - BODY_MARGIN;
   const height = document.body.offsetWidth / 2 - margin.top - margin.bottom;
   const x = d3.scaleLinear().range([0, width]);
   const y = d3.scaleLinear().range([height, 0]);
@@ -174,6 +201,9 @@ const createGraph = (paymentHistory: PaymentHistory, inputs: Inputs) => {
 
   svg.append("g")
     .call(d3.axisLeft(y));
+}
+
+const drawPie = (_paymentHistory: PaymentHistory, _inputs: Inputs) => {
 }
 
 
