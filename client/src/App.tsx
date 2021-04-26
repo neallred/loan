@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { Outcome } from './Outcome';
 
 interface SliderProps {
   label: string,
   amt: number,
+  min?: number,
   max: number,
   step: number,
   displayAmt?: string,
@@ -15,6 +17,7 @@ function Slider({
   displayAmt,
   setter,
   step,
+  min,
   max,
   ...inputProps
 }: SliderProps) {
@@ -24,149 +27,97 @@ function Slider({
         paddingBottom: "30px"
       }}
     >
+      <div>
+        <label htmlFor={label}>{label}: {displayAmt || amt}</label>
+      </div>
       <input
         {...inputProps}
         id={label}
-        min={0}
+        min={min || 0}
         max={max}
         step={step}
         type="range"
+        className="slider"
         value={amt}
         style={{
           width: "100%",
-          maxWidth: '100vw',
+          maxWidth: 'calc(100vw - 30px)',
         }}
         onChange={e => setter(parseInt(e.target.value))}
       />
-      <div>
-      <label htmlFor={label}>{label} {displayAmt || amt}</label>
-      </div>
     </div>
   )
 }
 
 const PERCENTAGE_GRANULARITY = 40;
 
-interface OutcomeProps {
-  yearlyTax: number 
-  yearlyInsurance: number 
-  principle: number 
-  annualInterestRate: number 
-  monthlyPayment: number 
-  monthsLeft: number 
+const SLIDER_SIZE = '40px';
+const sliderStyles = `
+/* The slider itself */
+.slider {
+  -webkit-appearance: none;  /* Override default CSS styles */
+  appearance: none;
+  width: 100%; /* Full-width */
+  height: ${SLIDER_SIZE}; /* Specified height */
+  background: #d3d3d3; /* Grey background */
+  outline: none; /* Remove outline */
+  opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+  -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+  transition: opacity .2s;
 }
 
-interface month {
-  paid: number,
-  interestPaid: number,
-  principalPaid: number,
-  remaining: number,
+/* Mouse-over effects */
+.slider:hover {
+  opacity: 1; /* Fully shown on mouse-over */
 }
 
-interface PaymentHistory {
-  left: number,
-  youPaid: number,
-  youPaidInterest: number,
-  monthCount: number,
-  months: month[],
-} 
-
-function scanPayments(facts: OutcomeProps): PaymentHistory {
-  let remaining = facts.principle;
-  let months = [];
-  let youPaid = 0;
-  let youPaidInterest = 0;
-  for (let i = facts.monthsLeft; i > 0; i--) {
-    if (remaining <= 0) {
-      break
-    }
-    const interestAccrued = (facts.annualInterestRate / 100 / 12) * remaining
-    const increases = (
-       (facts.yearlyInsurance / 12) +
-         (facts.yearlyTax / 12) +
-         interestAccrued 
-    );
-    const payment = facts.monthlyPayment > (increases + remaining) ? increases + remaining : facts.monthlyPayment;
-    const newRemaining = remaining + increases - payment;
-    const principalPaid = remaining - newRemaining;
-    remaining = newRemaining;
-    youPaid += payment;
-    youPaidInterest += interestAccrued;
-    months.push({
-      paid: payment,
-      interestPaid: interestAccrued,
-      principalPaid,
-      remaining,
-    })
-  }
-
-  return {
-    left: remaining,
-    youPaid,
-    youPaidInterest,
-    monthCount: months.length,
-    months: months,
-  }
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Override default look */
+  appearance: none;
+  width: ${SLIDER_SIZE}; /* Set a specific slider handle width */
+  height: ${SLIDER_SIZE}; /* Slider handle height */
+  background: #4CAF50; /* Green background */
+  cursor: pointer; /* Cursor on hover */
 }
 
-function Outcome({
-  yearlyTax,
-  yearlyInsurance,
-  principle,
-  annualInterestRate,
-  monthlyPayment,
-  monthsLeft,
-}: OutcomeProps) {
-  const paymentHistory = scanPayments({
-    yearlyTax,
-    yearlyInsurance,
-    principle,
-    annualInterestRate,
-    monthlyPayment,
-    monthsLeft,
-  })
-  if (paymentHistory.monthCount === 0 || principle <= 0) {
-    return <div
-      style={{
-        paddingBottom: '30px',
-      }}
-    />
-  }
-  return <div
-    style={{
-      paddingBottom: '30px',
-    }}
-  >
-    After {paymentHistory.monthCount} months, you paid {paymentHistory.youPaid.toFixed(2)} ({paymentHistory.youPaidInterest.toFixed(2)} in interest).
-    {paymentHistory.left > 0 && <div>You still have ${paymentHistory.left.toFixed(2)} to pay</div>}
-  </div>
+.slider::-moz-range-thumb {
+  width: ${SLIDER_SIZE}; /* Set a specific slider handle width */
+  height: ${SLIDER_SIZE}; /* Slider handle height */
+  background: #4CAF50; /* Green background */
+  cursor: pointer; /* Cursor on hover */
 }
+`;
 
 function App() {
-  const [yearlyTax, setYearlyTax] = useState(0);
-  const [yearlyInsurance, setYearlyInsurance] = useState(0);
-  const [principle, setPrinciple] = useState(0);
-  const [annualInterestRate, setAnnualInterestRate] = useState(0);
-  const [monthlyPayment, setMonthlyPayment] = useState(0);
-  const [monthsLeft, setMonthsLeft] = useState(360);
-  const actualInterestRate = annualInterestRate / PERCENTAGE_GRANULARITY;
+  const [yearlyTax, setYearlyTax] = useState(2500);
+  const [yearlyInsurance, setYearlyInsurance] = useState(3000);
+  const [principle, setPrinciple] = useState(250000);
+  const [inputInterestRate, setAnnualInterestRate] = useState(6 * PERCENTAGE_GRANULARITY);
+  const [monthlyPayment, setMonthlyPayment] = useState(2000);
+  const [yearsLeft, setYearsLeft] = useState(30);
+  const annualInterestRate = inputInterestRate / PERCENTAGE_GRANULARITY;
 
   return (
     <div>
+      <style>
+        {sliderStyles}
+      </style>
       <div>
         <Outcome
           yearlyTax={yearlyTax}
           yearlyInsurance={yearlyInsurance}
           principle={principle}
-          annualInterestRate={actualInterestRate}
+          annualInterestRate={annualInterestRate}
           monthlyPayment={monthlyPayment}
-          monthsLeft={monthsLeft}
+          yearsLeft={yearsLeft}
         />
       </div>
       <div>
         <Slider
           label="Yearly insurance"
           amt={yearlyInsurance}
+          displayAmt={`$${yearlyInsurance}`}
           setter={setYearlyInsurance}
           max={20000}
           step={50}
@@ -174,37 +125,42 @@ function App() {
         <Slider
           label="Yearly tax"
           amt={yearlyTax}
+          displayAmt={`$${yearlyTax}`}
           setter={setYearlyTax}
           max={20000}
           step={50}
         />
         <Slider
-          label="Remaining principle"
+          label="Initial remaining"
           amt={principle}
+          displayAmt={`$${principle}`}
           setter={setPrinciple}
-          max={1000000}
+          min={50000}
+          max={700000}
           step={1000}
         />
         <Slider
-          label="Annual interest rate (%)"
-          amt={annualInterestRate}
-          displayAmt={actualInterestRate.toString()}
+          label="Annual interest rate"
+          amt={inputInterestRate}
+          displayAmt={annualInterestRate.toString() + '%'}
           setter={setAnnualInterestRate}
-          max={20 * PERCENTAGE_GRANULARITY}
+          min={1 * PERCENTAGE_GRANULARITY}
+          max={10 * PERCENTAGE_GRANULARITY}
           step={1}
         />
         <Slider
           label="Monthly payment"
           amt={monthlyPayment}
+          displayAmt={`$${monthlyPayment}`}
           setter={setMonthlyPayment}
           max={5000}
           step={20}
         />
         <Slider
-          label="Months left"
-          amt={monthsLeft}
-          setter={setMonthsLeft}
-          max={360}
+          label="Years left"
+          amt={yearsLeft}
+          setter={setYearsLeft}
+          max={30}
           step={1}
         />
       </div>
