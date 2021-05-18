@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useReducer } from 'react';
 import { Outcome } from './Outcome';
 import { Slider, sliderStyles } from './Slider';
+import { MorePayments, paymentsReducer } from './AdditionalPayments';
 
 const PERCENTAGE_GRANULARITY = 40;
 
 
 function App() {
+  const [additionalPayments, additionalPaymentsDispatch] = useReducer(paymentsReducer, []); 
   const [yearlyTax, setYearlyTax] = useState(2500);
   const [yearlyInsurance, setYearlyInsurance] = useState(3000);
   const [principle, setPrinciple] = useState(250000);
@@ -84,6 +86,10 @@ function App() {
           step={1}
         />
       </div>
+      <MorePayments
+        payments={additionalPayments}
+        dispatch={additionalPaymentsDispatch}
+      />
     </div>
   );
 }

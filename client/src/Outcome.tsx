@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { AdditionalPayment } from './AdditionalPayments'
 
 import * as d3 from "d3";
 interface Inputs {
