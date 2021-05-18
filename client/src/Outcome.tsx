@@ -20,9 +20,13 @@ interface PaymentMonth {
 
 interface PaymentHistory {
   left: number,
-  youPaid: number,
-  youPaidPrinciple: number,
-  youPaidInterest: number,
+  totals: {
+    all: number,
+    principle: number,
+    interest: number,
+    insurance: number,
+    tax: number
+  },
   monthCount: number,
   months: PaymentMonth[],
 } 
@@ -30,27 +34,31 @@ interface PaymentHistory {
 function scanPayments(inputs: Inputs): PaymentHistory {
   let remaining = inputs.principle;
   let months = [];
-  let youPaid = 0;
-  let youPaidPrinciple = 0;
-  let youPaidInterest = 0;
+  let totals = {
+    all: 0,
+    principle: 0,
+    interest: 0,
+    insurance: 0,
+    tax: 0,
+  };
   let paymentMonth = 1;
   for (let i = inputs.yearsLeft * 12; i > 0; i--) {
     if (remaining <= 0) {
       break
     }
     const interestAccrued = (inputs.annualInterestRate / 100 / 12) * remaining
-    const increases = (
-       (inputs.yearlyInsurance / 12) +
-         (inputs.yearlyTax / 12) +
-         interestAccrued 
-    );
+    const taxPaid = inputs.yearlyTax / 12;
+    const insurancePaid = inputs.yearlyInsurance / 12;
+    const increases = insurancePaid + taxPaid + interestAccrued;
     const payment = inputs.monthlyPayment > (increases + remaining) ? increases + remaining : inputs.monthlyPayment;
     const newRemaining = remaining + increases - payment;
     const principlePaid = remaining - newRemaining;
     remaining = newRemaining;
-    youPaid += payment;
-    youPaidInterest += interestAccrued;
-    youPaidPrinciple += principlePaid;
+    totals.all += payment;
+    totals.interest += interestAccrued;
+    totals.principle += principlePaid;
+    totals.tax += taxPaid;
+    totals.insurance += insurancePaid;
     months.push({
       paid: payment,
       interestPaid: interestAccrued,
@@ -63,9 +71,7 @@ function scanPayments(inputs: Inputs): PaymentHistory {
 
   return {
     left: remaining,
-    youPaid,
-    youPaidInterest,
-    youPaidPrinciple,
+    totals,
     monthCount: months.length,
     months: months,
   }
@@ -120,24 +126,10 @@ export function Outcome(inputs: Inputs) {
       <div style={{ color: 'green'}}>Principle</div>
       <div style={{ color: 'red' }}>Interest</div>
     </div>
-      <div id="pie-mount">
-        <div style={{
-          borderRadius: '100%',
-          width: '80px',
-          height: '80px',
-          borderWidth: '1px',
-          borderColor: 'black',
-          borderStyle: 'solid',
-          textAlign: 'center',
-        }}>
-          <div>pie</div>
-          <div>principle</div>
-          <div>interest</div>
-        </div>
-      </div>
+      <div id="pie-mount"/>
     </div>
     <div>After {time}, </div>
-    you paid {numTo$(paymentHistory.youPaid)} ({numTo$(paymentHistory.youPaidInterest)} in interest)
+    you paid {numTo$(paymentHistory.totals.principle)} in principle, {numTo$(paymentHistory.totals.interest)} in interest, {numTo$(paymentHistory.totals.tax)} taxes & {numTo$(paymentHistory.totals.insurance)} insurance
     {paymentHistory.left > 0 ? <div>You still have {numTo$(paymentHistory.left)} to pay</div> : <div style={{opacity: 0}}>a</div>}
   </div>
 }
@@ -145,8 +137,8 @@ export function Outcome(inputs: Inputs) {
 const BODY_MARGIN = 20;
 const drawGraph = (paymentHistory: PaymentHistory, inputs: Inputs) => {
   const margin = { top: 10, right: 10, bottom: 20, left: 40 };
-  const width = document.body.offsetWidth - margin.left - margin.right - BODY_MARGIN;
-  const height = document.body.offsetWidth / 2 - margin.top - margin.bottom;
+  const width = Math.min(800, document.body.offsetWidth - margin.left - margin.right - BODY_MARGIN);
+  const height = Math.min(window.innerHeight, width / 2) - margin.top - margin.bottom;
   const x = d3.scaleLinear().range([0, width]);
   const y = d3.scaleLinear().range([height, 0]);
   const toMonth = (d: PaymentMonth)=> x(d.paymentMonth / 12)
@@ -203,7 +195,31 @@ const drawGraph = (paymentHistory: PaymentHistory, inputs: Inputs) => {
     .call(d3.axisLeft(y));
 }
 
-const drawPie = (_paymentHistory: PaymentHistory, _inputs: Inputs) => {
+const drawPie = (paymentHistory: PaymentHistory, _inputs: Inputs) => {
+  d3.select("#pie-mount svg").remove();
+  const diameter = document.body.offsetWidth / 4;
+  const svg = d3.select("#pie-mount").append("svg")
+    .attr("width", diameter)
+    .attr("height", diameter);
+  const radius = diameter / 2;
+  const g = svg.append("g").attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
+
+  const color = d3.scaleOrdinal(['green','red'])
+  const data = [paymentHistory.totals.principle, paymentHistory.totals.interest];
+  const pie = d3.pie()
+
+  const arc: any = d3.arc()
+    .innerRadius(0)
+    .outerRadius(radius);
+
+  //Generate groups
+  const arcs = g.selectAll("arc")
+    .data(pie(data))
+    .enter()
+    .append("g")
+    .attr("class", "arc");
+
+  arcs.append("path")
+    .attr("fill", (_, i:any) => color(i))
+    .attr("d", arc);
 }
-
-
