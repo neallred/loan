@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { AdditionalPayment, RepeatLogic } from './AdditionalPayments'
+import { numTo$ } from './number'
 
 import * as d3 from "d3";
 interface Inputs {
@@ -107,10 +108,6 @@ function scanPayments(inputs: Inputs): PaymentHistory {
     monthCount: months.length,
     months: months,
   }
-}
-
-function numTo$(x: number): string {
-  return '$' + (Math.round((x * 100)) / 100).toLocaleString()
 }
 
 function monthsToTime(months: number): string {

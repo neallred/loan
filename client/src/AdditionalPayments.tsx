@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Slider } from './Slider';
+import { numTo$ } from './number';
 
 export enum RepeatLogic {
   Once,
@@ -43,10 +44,12 @@ export interface AdditionalPaymentAction {
   payload?: AdditionalPayment,
 }
 
-let id = 0;
-function newId(): number {
-  id++;
-  return id
+export function IdFactory(): () => number {
+  let id = 0;
+  return function newId(): number {
+    id++;
+    return id
+  }
 }
 
 export function paymentsReducer(state: AdditionalPayment[], action: AdditionalPaymentAction): AdditionalPayment[] {
@@ -80,35 +83,45 @@ export function paymentsReducer(state: AdditionalPayment[], action: AdditionalPa
   }
 }
 
-function Payment(props: {payment: AdditionalPayment, delete: () => void}) {
-  return <div>
-    <div>
-      {props.payment.amount}
+const buttonStyles={
+  padding: '0px',
+  margin: '0px',
+  borderRadius: '40px',
+  width: '40px',
+  height: '40px',
+}
+
+function Payment(props: {isEven: boolean, payment: AdditionalPayment, delete: () => void}) {
+  const { payment } = props;
+  return <div
+    style={{
+      backgroundColor: props.isEven ? undefined : 'rgb(243, 255, 243)',
+      display: 'flex',
+    }}
+  >
+    <div style={{flexGrow: 1}}>
+      {numTo$(payment.amount)} - {RepeatString(payment.repeat)} - {calculateStartPayment(payment.startOffset)}
+      {payment.maxTimes > 0 && payment.repeat !== RepeatLogic.Once && <div>
+        {showMaxTimes(payment.maxTimes)}
+      </div>}
     </div>
-    <div>
-      {calculateStartPayment(props.payment.startOffset)}
-    </div>
-    <div>
-      {RepeatString(props.payment.repeat)}
-    </div>
-    <div>
-      {showMaxTimes(props.payment.maxTimes)}
-    </div>
-    <button onClick={props.delete}>x</button>
+    {/*<button style={buttonStyles}>{"🖉"}</button>*/}
+    <button style={buttonStyles} onClick={props.delete}>🗑</button>
   </div>
 }
 
 interface MorePaymentsProps {
   payments: AdditionalPayment[],
   dispatch: (x: AdditionalPaymentAction) => void, 
+  newId: () => number,
 }
 export function MorePayments(props: MorePaymentsProps) {
   const [open, toggleOpen] = useState(false)
   const sortedPayments = useMemo(() => {
     const sorted = props.payments.slice();
     sorted.sort((a, b) => {
-      if (a.startOffset == b.startOffset) {
-        if (a.repeat == b.repeat) {
+      if (a.startOffset === b.startOffset) {
+        if (a.repeat === b.repeat) {
           return a.amount <= b.amount ? -1 : 1
         }
         return a.repeat < b.repeat ? -1 : 1
@@ -119,7 +132,7 @@ export function MorePayments(props: MorePaymentsProps) {
   }, [props.payments])
 
   return <div>
-    {sortedPayments.map(x => <Payment key={x.id} payment={x} delete={
+    {sortedPayments.map((x, idx) => <Payment isEven={idx % 2 === 0} key={x.id} payment={x} delete={
       () => {props.dispatch({action: 'remove', id: x.id})}
     }/>)}
     <button onClick={(_) => {toggleOpen(wasOpen => !wasOpen)}}>
@@ -127,15 +140,18 @@ export function MorePayments(props: MorePaymentsProps) {
     </button>
     {open && <div>
       <PaymentForm
-        onSave={props.dispatch}
-        getId={newId}
+        onSave={(...args) => {
+          props.dispatch(...args)
+          toggleOpen(false)
+        }}
+        getId={props.newId}
       />
     </div>
     }
   </div>
 }
 
-interface AddPaymentFormProps {
+interface PaymentFormProps {
   initial?: AdditionalPayment,
   onSave: (x: AdditionalPaymentAction) => void,
   getId: () => number,
@@ -176,7 +192,7 @@ function showMaxTimes(offset: number): string {
   if (offset === 0) {
     return "Any amount of times"
   }
-  return offset.toString()
+  return `${offset} times`
 }
 
 function calculateStartPayment(offset: number): string {
@@ -205,8 +221,8 @@ function calculateStartPayment(offset: number): string {
   return `${whenMonth} ${whenYear}`
 }
 
-export function PaymentForm(props: AddPaymentFormProps) {
-  const [amount, setAmount] = useState(props.initial ? props.initial.amount : 0);
+export function PaymentForm(props: PaymentFormProps) {
+  const [amount, setAmount] = useState(props.initial ? props.initial.amount : 100);
   const [startOffset, setStartOffset] = useState(props.initial ? props.initial.startOffset : 0);
   const [repeat, setRepeat] = useState(props.initial ? props.initial.repeat : RepeatLogic.Once);
   const [maxTimes, setMaxTimes] = useState(props.initial ? props.initial.maxTimes : 0);
@@ -232,7 +248,7 @@ export function PaymentForm(props: AddPaymentFormProps) {
     <Slider
       label="Max repeats"
       amt={maxTimes}
-      displayAmt={showMaxTimes(startOffset)}
+      displayAmt={showMaxTimes(maxTimes)}
       setter={setMaxTimes}
       step={1}
       min={0}

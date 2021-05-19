@@ -1,10 +1,12 @@
 import { useState, useReducer } from 'react';
 import { Outcome } from './Outcome';
 import { Slider, sliderStyles } from './Slider';
-import { MorePayments, paymentsReducer } from './AdditionalPayments';
+import { MorePayments, paymentsReducer, IdFactory } from './AdditionalPayments';
 
 const PERCENTAGE_GRANULARITY = 40;
 
+
+const newId = IdFactory()
 
 function App() {
   const [additionalPayments, additionalPaymentsDispatch] = useReducer(paymentsReducer, []); 
@@ -89,6 +91,7 @@ function App() {
       </div>
       <MorePayments
         payments={additionalPayments}
+        newId={newId}
         dispatch={additionalPaymentsDispatch}
       />
     </div>
