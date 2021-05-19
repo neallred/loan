@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { AdditionalPayment } from './AdditionalPayments'
+import { AdditionalPayment, RepeatLogic } from './AdditionalPayments'
 
 import * as d3 from "d3";
 interface Inputs {
@@ -9,6 +9,7 @@ interface Inputs {
   annualInterestRate: number 
   monthlyPayment: number 
   yearsLeft: number 
+  additionalPayments: AdditionalPayment[]
 }
 
 interface PaymentMonth {
@@ -32,6 +33,35 @@ interface PaymentHistory {
   months: PaymentMonth[],
 } 
 
+const monthRepeatIntervals = {
+  [RepeatLogic.Once]: 0,
+  [RepeatLogic.EveryOtherYear]: 24,
+  [RepeatLogic.Yearly]: 12,
+  [RepeatLogic.TwiceYearly]: 6,
+  [RepeatLogic.Quarterly]: 3,
+  [RepeatLogic.Monthly]: 1,
+}
+
+function getAdditionalPayment(monthAfterPresent: number, payment: AdditionalPayment): number {
+  if (payment.repeat === RepeatLogic.Once) {
+    return payment.startOffset === monthAfterPresent ? payment.amount : 0
+  }
+
+  const monthInterval: number = monthRepeatIntervals[payment.repeat];
+  const isPaymentTurn = (monthAfterPresent - payment.startOffset) % monthInterval === 0
+  if (!isPaymentTurn) {
+    return 0
+  }
+  if ((payment.maxTimes > 0) && (monthAfterPresent / payment.startOffset > payment.maxTimes)) {
+    return 0
+  }
+  return payment.amount
+}
+
+function getAdditionalPayments(monthAfterPresent: number, additionalPayments: AdditionalPayment[]): number {
+  return additionalPayments.reduce((acc, curr) => getAdditionalPayment(monthAfterPresent, curr) + acc, 0)
+}
+
 function scanPayments(inputs: Inputs): PaymentHistory {
   let remaining = inputs.principle;
   let months = [];
@@ -51,7 +81,8 @@ function scanPayments(inputs: Inputs): PaymentHistory {
     const taxPaid = inputs.yearlyTax / 12;
     const insurancePaid = inputs.yearlyInsurance / 12;
     const increases = insurancePaid + taxPaid + interestAccrued;
-    const payment = inputs.monthlyPayment > (increases + remaining) ? increases + remaining : inputs.monthlyPayment;
+    const wouldPay = inputs.monthlyPayment + getAdditionalPayments(paymentMonth - 1, inputs.additionalPayments)
+    const payment = wouldPay > (increases + remaining) ? increases + remaining : wouldPay;
     const newRemaining = remaining + increases - payment;
     const principlePaid = remaining - newRemaining;
     remaining = newRemaining;

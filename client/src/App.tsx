@@ -33,6 +33,7 @@ function App() {
           annualInterestRate={annualInterestRate}
           monthlyPayment={monthlyPayment}
           yearsLeft={yearsLeft}
+          additionalPayments={additionalPayments}
         />
       </div>
       <div>

@@ -33,6 +33,7 @@ export interface AdditionalPayment {
   id: number,
   amount: number,
   startOffset: number,
+  maxTimes: number,
   repeat: RepeatLogic,
 }
 
@@ -89,6 +90,9 @@ function Payment(props: {payment: AdditionalPayment, delete: () => void}) {
     </div>
     <div>
       {RepeatString(props.payment.repeat)}
+    </div>
+    <div>
+      {showMaxTimes(props.payment.maxTimes)}
     </div>
     <button onClick={props.delete}>x</button>
   </div>
@@ -168,6 +172,13 @@ function toMonthString(monthNumber: number): string {
   }
 }
 
+function showMaxTimes(offset: number): string {
+  if (offset === 0) {
+    return "Any amount of times"
+  }
+  return offset.toString()
+}
+
 function calculateStartPayment(offset: number): string {
   if (offset === 0) {
     return "Now"
@@ -198,6 +209,7 @@ export function PaymentForm(props: AddPaymentFormProps) {
   const [amount, setAmount] = useState(props.initial ? props.initial.amount : 0);
   const [startOffset, setStartOffset] = useState(props.initial ? props.initial.startOffset : 0);
   const [repeat, setRepeat] = useState(props.initial ? props.initial.repeat : RepeatLogic.Once);
+  const [maxTimes, setMaxTimes] = useState(props.initial ? props.initial.maxTimes : 0);
   return <div>
     <Slider
       label="Amount"
@@ -216,6 +228,17 @@ export function PaymentForm(props: AddPaymentFormProps) {
       min={0}
       max={360}
     />
+    { repeat !== RepeatLogic.Once &&
+    <Slider
+      label="Max repeats"
+      amt={maxTimes}
+      displayAmt={showMaxTimes(startOffset)}
+      setter={setMaxTimes}
+      step={1}
+      min={0}
+      max={20}
+    />
+    }
     
     Payment type:
     <select value={repeat} onChange={(e) => {
@@ -235,6 +258,7 @@ export function PaymentForm(props: AddPaymentFormProps) {
         amount,
         startOffset,
         repeat,
+        maxTimes,
       },
       action: props.initial ? 'edit' : 'add',
     })}>
